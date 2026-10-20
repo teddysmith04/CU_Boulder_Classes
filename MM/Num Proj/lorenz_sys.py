@@ -59,7 +59,7 @@ plt.show()
 
 
 ### Repeat for r = 25
-r = 25
+r = 26
 sol2 = solve_ivp(lorenz, [t_start, t_end], initial_conditions, t_eval=t_eval)
 
 plt.figure(figsize=(12, 8))
