@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import solve_ivp
 
 plt.rcParams.update({
-    'font.size': 14,
+    'font.size': 21,
     'font.family': 'serif',
     'xtick.direction': 'in',
     'ytick.direction': 'in',
@@ -92,22 +92,28 @@ ax1[1].text(0.5, 0.9, 'r = 26', transform=ax1[1].transAxes, bbox=dict(edgecolor=
 ax1[1].yaxis.tick_right()
 
 
-plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/Num Proj/fig1.pdf', bbox_inches='tight')
-plt.show()
-exit()
+# plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/Num Proj/fig1.pdf', bbox_inches='tight')
+# plt.show()
+r = 17
+# init_2 = [3,3,3]
+# sol2 = solve_ivp(lorenz, [t_start, t_end], init_2, t_eval=t_eval)
 
 fig = plt.figure(figsize=(12, 8))
 ax = fig.add_subplot(111, projection='3d')
-ax.plot(solution.y[0], solution.y[1], solution.y[2])
-ax.plot(-4, -4, 16, 'ro')  # Marking the point (-4, -4, 16)
-ax.set_title('Phase Space Trajectory')
+ax.plot(solution.y[0], solution.y[1], solution.y[2], color = 'blue')
+ax.plot(sol2.y[0], sol2.y[1], sol2.y[2], color = 'red')
+ax.plot(-4, -4, 16, 'ko', markersize = 10)  # Marking the point (-4, -4, 16)
 ax.set_xlabel('x(t)')
 ax.set_ylabel('y(t)')
 ax.set_zlabel('z(t)')
-plt.show()
+
+
+# plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/Num Proj/fig2.pdf', bbox_inches='tight')
+# plt.show()
 plt.cla()
 plt.clf()
 plt.close()
+
 
 
 fig = plt.figure(figsize=(12, 8))
@@ -115,8 +121,10 @@ ax = fig.add_subplot(111, projection='3d')
 ax.plot(sol2.y[0], sol2.y[1], sol2.y[2])
 ax.plot(-5, -5, 25, 'ro')
 ax.plot(5, 5, 25, 'ro') 
-ax.set_title('Phase Space Trajectory')
+ax.view_init(elev=30, azim=145)
+# ax.set_title('Phase Space Trajectory')
 ax.set_xlabel('x(t)')
 ax.set_ylabel('y(t)')
 ax.set_zlabel('z(t)')
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/Num Proj/fig3.pdf', bbox_inches='tight')
 plt.show()
