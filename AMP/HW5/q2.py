@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.special import assoc_laguerre, factorial, assoc_legendre_p
+import pandas as pd
 
 ### Defining constants
 a0 = 5.29177210903e-11  # Bohr radius in meters
@@ -81,10 +82,37 @@ def Aij_calculation(ni, li, mi, nj, lj): #### mi = mj which also sets the phi in
     return A_ij, M_ij_sq, nu_0
 
 #### Test cases that should be 0 (1s -> 1s , 3d -> 3d)
-Aij_test1 = Aij_calculation(1, 0, 0, 2, 1)
+Aij_test1 = Aij_calculation(1, 0, 0, 3, 2)
+
+print(f'Test case Aij: {Aij_test1[0]:.3e}, Mij_sq: {Aij_test1[1]:.3e}, nu_0: {Aij_test1[2]:.3e}')
 
 
-print(f"Test case 1 (2p -> 1s): A_ij = {Aij_test1[0]:.3e}, |M_ij|^2 = {Aij_test1[1]:.3e}, nu_0 = {Aij_test1[2]:.3e} Hz")
+####_____________________________________________ part c _______________________________________________ ####
+### Run Aij calc for grid of nj p -> ni s
+### nj = 2, 3, 4, ..., 10, ni = 1, 2, 3, ..., nj-1
+### Save to a df table with structure: nj, ni, Aij
+df_dict = {
+    'nj': np.arange(2, 11),
+    'ni': np.arange(1, 10),
+    'Aij': np.zeros((9, 9)),
+    'Mij_sq': np.zeros((9, 9)),
+    'nu_0': np.zeros((9, 9))
+}
+
+
+for ni in df_dict['ni']:
+    for nj in df_dict['nj']:
+        if ni < nj:
+            Aij, Mij_sq, nu_0 = Aij_calculation(ni, 0, 0, nj, 1)
+            df_dict['Aij'][nj-2, ni-1] = Aij
+            df_dict['Mij_sq'][nj-2, ni-1] = Mij_sq
+            df_dict['nu_0'][nj-2, ni-1] = nu_0
+
+
+df = pd.DataFrame(df_dict['Aij'], index=df_dict['nj'], columns=df_dict['ni'])
+### Print or save as a latex table
+print(df.to_latex(index=True, header=True, float_format="%.1e"))
+
 
 
 
