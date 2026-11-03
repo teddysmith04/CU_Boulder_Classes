@@ -41,7 +41,7 @@ def Theta(l, m, theta):
     Angular wavefunction Theta(l, m, theta)
     """
     norm = norm_T(l, m)
-    return norm * assoc_legendre_p(l, m, np.cos(theta))
+    return norm * assoc_legendre_p(l, m, np.cos(theta))[0]
 
 def A21(Mij_sq, nu_0):
     return (16 * np.pi**3 * nu_0**3 * e**2 * a0**2 / (3 * ep_0 * h * c**3)) * Mij_sq
@@ -66,13 +66,14 @@ def Aij_calculation(ni, li, mi, nj, lj): #### mi = mj which also sets the phi in
     ### Know: |M_ij|^2 = M_z^2, and M_z = 2pi * R_integral * theta_integral
     ### Calculate M_ij
     M_z = 2 * np.pi * R_integral * theta_integral
-    M_ij_sq = M_z**2
+    M_ij_sq = M_z**2 / a0**2  # Convert to dimensionless
 
     ### Calculate nu_0 = (E_i - E_j)/h
     E_i = -13.6 * e / ni**2
     E_j = -13.6 * e / nj**2
 
-    nu_0 = (E_i - E_j) / h
+    nu_0 = -(E_i - E_j) / h
+    # nu_0 = 1e20
 
     ### Calculate A_ij
     A_ij = A21(M_ij_sq, nu_0)
@@ -80,11 +81,13 @@ def Aij_calculation(ni, li, mi, nj, lj): #### mi = mj which also sets the phi in
     return A_ij, M_ij_sq, nu_0
 
 #### Test cases that should be 0 (1s -> 1s , 3d -> 3d)
-Aij_test1 = Aij_calculation(1, 0, 0, 1, 0)
-Aij_test2 = Aij_calculation(3, 2, 0, 3, 2)
+Aij_test1 = Aij_calculation(1, 0, 0, 2, 1)
 
-print("Test case 1 (1s -> 1s): A_ij = ", Aij_test1[0], " M_ij^2 = ", Aij_test1[1], " nu_0 = ", Aij_test1[2])
-print("Test case 2 (3d -> 3d): A_ij = ", Aij_test2[0], " M_ij^2 = ", Aij_test2[1], " nu_0 = ", Aij_test2[2])
+
+print(f"Test case 1 (2p -> 1s): A_ij = {Aij_test1[0]:.3e}, |M_ij|^2 = {Aij_test1[1]:.3e}, nu_0 = {Aij_test1[2]:.3e} Hz")
+
+
+
 
 
 
