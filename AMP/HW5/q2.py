@@ -8,6 +8,22 @@ from scipy.special import assoc_laguerre, factorial, assoc_legendre_p
 import pandas as pd
 from scipy.optimize import curve_fit
 
+plt.rcParams.update({
+    'font.size': 14,
+    'font.family': 'serif',
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.top': True,
+    'ytick.right': True,
+    'xtick.major.size': 5,
+    'ytick.major.size': 5,
+    'xtick.minor.size': 3,
+    'ytick.minor.size': 3,
+    'xtick.minor.visible': True,
+    'ytick.minor.visible': True,
+
+})
+
 ### Defining constants
 a0 = 5.29177210903e-11  # Bohr radius in meters
 ep_0 = 8.854187817e-12  # Vacuum permittivity in F/m
@@ -140,7 +156,7 @@ popt, pcov = curve_fit(log_power_law, log_ni_vals, log_Aij_vals)
 ###Plot it too 
 fig, ax = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={'width_ratios': [1, 1], 'wspace': 0.0})
 ax[0].plot(log_ni_vals, log_Aij_vals, 'o', label='Data')
-ax[0].plot(log_ni_vals, log_power_law(log_ni_vals, *popt), 'r-', label='Fit: C=%.3e, alpha=%.3f' % (10**popt[1], popt[0]))
+ax[0].plot(log_ni_vals, log_power_law(log_ni_vals, *popt), 'r-', label='Fit: C=%.1e, alpha=%.1f' % (10**popt[1], popt[0]))
 ax[0].set(
 xlabel='log10(ni)', ylabel='log10(Aij)', title=f'Fit for fixed nj={nj_fixed}'
 )
@@ -169,10 +185,13 @@ beta = popt[0]
 C = 10**popt[1]
 
 ax[1].plot(log_nj_vals, log_Aij_vals, 'o', label='Data')
-ax[1].plot(log_nj_vals, log_power_law(log_nj_vals, *popt), 'r-', label='Fit: C=%.3e, beta=%.3f' % (C, beta))
+ax[1].plot(log_nj_vals, log_power_law(log_nj_vals, *popt), 'r-', label='Fit: C=%.1e, beta=%.1f' % (C, beta))
 ax[1].set(
 xlabel='log10(nj)', ylabel='log10(Aij)', title=f'Fit for fixed ni={ni_fixed}'
 )
+
+ax[1].yaxis.set_label_position("right")
+ax[1].yaxis.tick_right()
 
 ax[0].legend()
 ax[1].legend()
