@@ -134,7 +134,7 @@ df = pd.DataFrame(df_dict['Aij'], index=df_dict['nj'], columns=df_dict['ni'])
 ### Fit the data to A_ij = C/(n_i^alpha * n_j^beta), find C, alpha, beta
 
 ### Step 1: fix nj, fit Aij vs ni to find alpha and C
-nj_fixed = 20
+nj_fixed = 10
 Aij_vals = []
 ni_vals = []
 for ni in np.arange(1, nj_fixed):
@@ -167,7 +167,7 @@ xlabel='log10(ni)', ylabel='log10(Aij)', title=f'Fit for fixed nj={nj_fixed}'
 
 #### Do the opposite for fixed ni, fit Aij vs nj to find beta and C
 ni_fixed = 1
-nj_max = 20
+nj_max = 10
 Aij_vals = []
 nj_vals = []
 for nj in np.arange(ni_fixed + 1, nj_max + 1):
