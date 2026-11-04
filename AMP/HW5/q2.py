@@ -130,11 +130,15 @@ df = pd.DataFrame(df_dict['Aij'], index=df_dict['nj'], columns=df_dict['ni'])
 ### Print or save as a latex table
 # print(df.to_latex(index=True, header=True, float_format="%.1e"))
 
-######## pard d ##########
+
+
+
+
+########_____________________________________________  pard d _____________________________________________ ##########
 ### Fit the data to A_ij = C/(n_i^alpha * n_j^beta), find C, alpha, beta
 
 ### Step 1: fix nj, fit Aij vs ni to find alpha and C
-nj_fixed = 10
+nj_fixed = 40
 Aij_vals = []
 ni_vals = []
 for ni in np.arange(1, nj_fixed):
@@ -167,7 +171,7 @@ xlabel='log10(ni)', ylabel='log10(Aij)', title=f'Fit for fixed nj={nj_fixed}'
 
 #### Do the opposite for fixed ni, fit Aij vs nj to find beta and C
 ni_fixed = 1
-nj_max = 10
+nj_max = 40
 Aij_vals = []
 nj_vals = []
 for nj in np.arange(ni_fixed + 1, nj_max + 1):
@@ -195,6 +199,7 @@ ax[1].yaxis.tick_right()
 
 ax[0].legend()
 ax[1].legend()
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/AMP/HWs/Hw5/Aij_maxn20.pdf', dpi=300, bbox_inches='tight')
 plt.show()
 print(f"Fit results for fixed ni={ni_fixed}: C={C:.3e}, beta={beta:.3f}")
 
