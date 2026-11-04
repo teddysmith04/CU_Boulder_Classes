@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.special import assoc_laguerre, factorial, assoc_legendre_p
 import pandas as pd
+from scipy.optimize import curve_fit
 
 ### Defining constants
 a0 = 5.29177210903e-11  # Bohr radius in meters
@@ -84,7 +85,7 @@ def Aij_calculation(ni, li, mi, nj, lj): #### mi = mj which also sets the phi in
 #### Test cases that should be 0 (1s -> 1s , 3d -> 3d)
 Aij_test1 = Aij_calculation(1, 0, 0, 3, 2)
 
-print(f'Test case Aij: {Aij_test1[0]:.3e}, Mij_sq: {Aij_test1[1]:.3e}, nu_0: {Aij_test1[2]:.3e}')
+# print(f'Test case Aij: {Aij_test1[0]:.3e}, Mij_sq: {Aij_test1[1]:.3e}, nu_0: {Aij_test1[2]:.3e}')
 
 
 ####_____________________________________________ part c _______________________________________________ ####
@@ -111,7 +112,76 @@ for ni in df_dict['ni']:
 
 df = pd.DataFrame(df_dict['Aij'], index=df_dict['nj'], columns=df_dict['ni'])
 ### Print or save as a latex table
-print(df.to_latex(index=True, header=True, float_format="%.1e"))
+# print(df.to_latex(index=True, header=True, float_format="%.1e"))
+
+######## pard d ##########
+### Fit the data to A_ij = C/(n_i^alpha * n_j^beta), find C, alpha, beta
+
+### Step 1: fix nj, fit Aij vs ni to find alpha and C
+nj_fixed = 20
+Aij_vals = []
+ni_vals = []
+for ni in np.arange(1, nj_fixed):
+    if ni < nj_fixed:
+        Aij, Mij_sq, nu_0 = Aij_calculation(ni, 0, 0, nj_fixed, 1)
+        Aij_vals.append(Aij)
+        ni_vals.append(ni)
+
+
+### Linear power law model to fit
+def log_power_law(x, C, alpha):
+    return alpha * x + C
+
+log_Aij_vals = np.log10(Aij_vals)
+log_ni_vals = np.log10(ni_vals)
+
+popt, pcov = curve_fit(log_power_law, log_ni_vals, log_Aij_vals)
+
+###Plot it too 
+fig, ax = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={'width_ratios': [1, 1], 'wspace': 0.0})
+ax[0].plot(log_ni_vals, log_Aij_vals, 'o', label='Data')
+ax[0].plot(log_ni_vals, log_power_law(log_ni_vals, *popt), 'r-', label='Fit: C=%.3e, alpha=%.3f' % (10**popt[1], popt[0]))
+ax[0].set(
+xlabel='log10(ni)', ylabel='log10(Aij)', title=f'Fit for fixed nj={nj_fixed}'
+)
+
+
+# print(f"Fit results for fixed nj={nj_fixed}: C={10**popt[1]:.3e}, alpha={popt[0]:.3f}")
+
+
+#### Do the opposite for fixed ni, fit Aij vs nj to find beta and C
+ni_fixed = 1
+nj_max = 20
+Aij_vals = []
+nj_vals = []
+for nj in np.arange(ni_fixed + 1, nj_max + 1):
+    if ni_fixed < nj:
+        Aij, Mij_sq, nu_0 = Aij_calculation(ni_fixed, 0, 0, nj, 1)
+        Aij_vals.append(Aij)
+        nj_vals.append(nj)
+
+### Linear power law model to fit
+log_Aij_vals = np.log10(Aij_vals)
+log_nj_vals = np.log10(nj_vals)
+
+popt, pcov = curve_fit(log_power_law, log_nj_vals, log_Aij_vals)
+beta = popt[0]
+C = 10**popt[1]
+
+ax[1].plot(log_nj_vals, log_Aij_vals, 'o', label='Data')
+ax[1].plot(log_nj_vals, log_power_law(log_nj_vals, *popt), 'r-', label='Fit: C=%.3e, beta=%.3f' % (C, beta))
+ax[1].set(
+xlabel='log10(nj)', ylabel='log10(Aij)', title=f'Fit for fixed ni={ni_fixed}'
+)
+
+ax[0].legend()
+ax[1].legend()
+plt.show()
+print(f"Fit results for fixed ni={ni_fixed}: C={C:.3e}, beta={beta:.3f}")
+
+
+
+
 
 
 
