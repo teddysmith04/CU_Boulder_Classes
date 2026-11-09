@@ -1,75 +1,95 @@
-import numpy as np 
+import numpy as np
 import matplotlib.pyplot as plt
 import emcee
 
+plt.rcParams.update({
+    'font.size': 14,
+    'font.family': 'serif',
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.top': True,
+    'ytick.right': True,
+    'xtick.major.size': 5,
+    'ytick.major.size': 5,
+    'xtick.minor.size': 3,
+    'ytick.minor.size': 3,
+    'xtick.minor.visible': True,
+    'ytick.minor.visible': True,
 
-### Define physical constants
-c = 2.99792458e8  # Speed of light in m/s
-kb = 1.380649e-23  # Boltzmann constant in J/K
+})
 
-#### Define arrays for the lines and their fwhms
-lines = ['CIIIa', 'OVI', 'CIIIb', 'HI', 'CII', 'SiIV', 'CIVa', 'HeII', 'SiII', 'CIIIc', 'CrII', 'FeII']
-FWHMs = [0.3893, 0.3355, 0.3647, 1.2696, 0.5181, 0.3747, 0.4711, 0.9163, 0.4731, 0.6477, 0.4461, 0.5537] ## Angstroms
-lam0 = [977, 1032, 1175, 1216, 1335, 1393, 1548, 1640, 1808, 1909, 2056, 2175] ## angstroms
-masses = [12, 16, 12, 1, 12, 28, 12, 4, 28, 12, 52, 56] ## atomic mass units
+c_kms = 2.99792458e5
+kb, amu = 1.380649e-23, 1.66053906660e-27
+K = 2*kb/amu/1e6            ### making the units km^2/s^2
 
 
+### Define arrays
 
-### convert FWHMs to m/s using the formula FWHM = (lam0/c) * v, where v is the velocity in m/s
-FWHMs = np.array(FWHMs) * 1e-10 * c / (np.array(lam0) * 1e-10) # convert to m/s
+FWHM = np.array([0.3898, 0.3355, 0.3647, 1.2696, 0.5181, 0.3747,
+                 0.4711, 0.9163, 0.4731, 0.6477, 0.4461, 0.5537])  # Å
+lam0 = np.array([977, 1032, 1175, 1216, 1335, 1394,
+                 1548, 1640, 1808, 1909, 2056, 2175], float)       # Å
+A    = np.array([12, 16, 12, 1, 12, 28, 12, 4, 28, 12, 52, 56], float)
 
-## convert lam0s to meters
-lam0 = np.array(lam0) * 1e-10  # convert to meters
 
-### convert masses to kg
-masses = np.array(masses) * 1.66053906660e-27  # convert to kg
+#### Calculating the velocity dispersion and preparing the data for MCMC
 
-### Perform max likelyfhood estimation of the FWHM for each line using MCMC to find T and microturbulent velocity
-def log_likelihood(theta, x, y, yerr):
-    m, b, log_scatter = theta
-    ### Define model where x = lam_0^2/m, m = T, b = microturbulent velocity^2, log_f = log of the scatter
-    model = (2*kb / (c**2)) * m * x + b
-    sigma2 = yerr**2 + model**2 * np.exp(2 * log_scatter)
-    return -0.5 * np.sum((y - model) ** 2 / sigma2 + np.log(sigma2))
+vD = c_kms * FWHM / lam0 / (2*np.sqrt(2*np.log(2)))
+y = vD**2        
+x = 1.0 / A         
 
-### Find the min and max values of lam0**2 /m to set the bounds for the priors
-min_x = np.min(lam0**2 /masses)
-max_x = np.max(lam0**2 /masses)
+### Defining the model and log-probability function for MCMC
 
-x_eval = np.linspace(min_x, max_x, 100)
+def model(T, xi, x):
+    return K*T*x + xi**2
 
-def log_prior(theta):
-    T, xi, log_scatter = theta
-
-    ### Define priors
-    if 8e4 < T < 1e9 and 10 < xi < 1e4 and -10.0 < log_scatter < 2.0:
-        return 0.0
-    return -np.inf
-
-def log_probability(theta, x, y, yerr):  # a function of model parameters and data
-    lp = log_prior(theta)
-    if not np.isfinite(lp):
+def log_prob(theta, x, y):
+    T, xi, lnf = theta
+    if not (1e4 < T < 1e8 and 0 < xi < 500 and -10 < lnf < 2):
         return -np.inf
-    return lp + log_likelihood(theta, x, y, yerr)
+    mod = model(T, xi, x)
+    s2 = (mod*np.exp(lnf))**2  ### fractional scatter (no measured errors)
+    return -0.5*np.sum((y-mod)**2/s2 + np.log(s2))
 
-### Set up the MCMC sampler
-pos = [np.array([1e5, 100, -1.0]) + 1e-4 * np.random.randn(3) for i in range(32)]  # Initial positions of walkers
+### run MCMC
+
 nwalkers, ndim = 32, 3
-sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(np.array(lam0)**2, np.array(FWHMs), 0.1*np.array(FWHMs)))
-sampler.run_mcmc(pos, 5000, progress=True)  # 
+p0 = np.array([2e6, 40, -2.0])
+pos = p0 + np.array([1e5, 2, 0.1]) * np.random.randn(nwalkers, ndim)
 
-### Get the samples and plot the results
+sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=(x, y))
+sampler.run_mcmc(pos, 5000, progress=True)
 samples = sampler.get_chain(discard=1000, thin=15, flat=True)
 
+# Posterior summaries
+for name, i in [("T [K]", 0), ("xi [km/s]", 1)]:
+    lo, med, hi = np.percentile(samples[:, i], [16, 50, 84])
+    print(f"{name}: {med:.4g} +{hi-med:.3g} -{med-lo:.3g}")
 
+T_lo, T_med, T_hi = np.percentile(samples[:, 0], [16, 50, 84])
+xi_lo, xi_med, xi_hi = np.percentile(samples[:, 1], [16, 50, 84])
+
+# Plot
+fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 inds = np.random.randint(len(samples), size=100)
-
-fig, ax = plt.subplots(1, figsize=(10, 8), sharex=True)
 for ind in inds:
     sample = samples[ind]
-    ax.plot(x_eval, (2*kb / (c**2)) * sample[0] * x_eval + sample[1], color="r", alpha=0.1)
+    ax.plot(x, model(sample[0], sample[1], x), color="r", alpha=0.1)
+ax.plot(x, model(np.median(samples[:, 0]), np.median(samples[:, 1]), x), color="k", lw=2, label="Median model")
+# ax.fill_between(x, model(np.percentile(samples[:, 0], 16), np.percentile(samples[:, 1], 16), x),
+                # model(np.percentile(samples[:, 0], 84), np.percentile(samples[:, 1], 84), x), color="k", alpha=0.5, label="Confidence interval (68%)")
+ax.plot(x, y, "^", color="b", label="Data")
 
-ax.errorbar(lam0**2/masses, FWHMs**2, yerr=0.1*FWHMs, fmt=".k", capsize=0)
+ax.set(
+    xlabel = '1/m (amu)',
+    ylabel = r'$c (\Delta \lambda / \lambda_0)^2$',
 
+)
+ax.text(0.05, 0.54, r'$T = 2.07^{+0.24}_{-0.23}\times10^6$K', transform=ax.transAxes)
+ax.text(0.05, 0.5, r'$\xi =  33.7^{+3.26}_{-3.42}$ km/s', transform=ax.transAxes)
+ax.text(0.05, 0.58, r'MCMC median posterior parameter values', transform=ax.transAxes)
+
+ax.legend()
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/AMP/HWs/Hw5/MCMC_fit.pdf', dpi=300, bbox_inches='tight')
 plt.show()
 
