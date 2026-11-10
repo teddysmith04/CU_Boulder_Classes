@@ -24,7 +24,7 @@ def composite(vector):
     ps, rs = vector
     return [mass(50, ps, rs) - mass_r50, mass(230, ps, rs) - mass_r230]
 
-solutions = fsolve(composite, [1e-3, 1])
+solutions = fsolve(composite, [1e3, 1e3])
 print(f"Best fit parameters: ps = {solutions[0]}, rs = {solutions[1]}")
 sanity_check = composite(solutions)
 print(f"Sanity check (should be close to 0): {sanity_check}")
