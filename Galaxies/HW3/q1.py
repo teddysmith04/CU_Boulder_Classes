@@ -17,8 +17,8 @@ def mass(rmax, ps, rs):
     integrand = lambda r: 4 * np.pi * r**2 * NFW(r, ps, rs)
     return quad(integrand, 0, rmax)[0]
 
-mass_r50 = 5.4e11  # M_sun out to 50kpc
-mass_r230 = 1.9e12  # M_sun out to 230kpc
+mass_r50 = 5.4e11  ### M_sun out to 50kpc
+mass_r230 = 1.9e12  ### M_sun out to 230kpc
 
 def composite(vector):
     ps, rs = vector
