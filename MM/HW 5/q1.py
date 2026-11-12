@@ -54,7 +54,7 @@ for ax, t in zip(axes.flat, inst):
     ax.text(0.03, 0.95, f't = {t}', transform=ax.transAxes, color='white',
             va='top', ha='left', fontsize=12)
  
-# Colorbar axis spanning the full height of the image grid
+### Colorbar axis spanning the full height of the image grid
 bottom = axes[1, 0].get_position().y0
 top = axes[0, 0].get_position().y1
 cax = fig.add_axes([0.90, bottom, 0.025, top - bottom])
@@ -81,6 +81,24 @@ fig2.supxlabel('X [pixels]')
 fig2.supylabel('Doppler Velocity [m/s]')
 
 plt.show()
+plt.cla()
+plt.clf()
+plt.close()
+
+##### Calculate the RMS velocity of each image
+data_inst = data[inst,:,:]
+#flatten
+data_flat = data_inst.reshape(data_inst.shape[0], -1)
+
+for i in range(5):
+    rms_velocity = np.sqrt(np.nanmean(data_flat[i]**2))
+    print(f"RMS velocity for image {inst[i]}: {rms_velocity/1000:.2f} km/s")
+
+
+
+
+
+
  
 
 
