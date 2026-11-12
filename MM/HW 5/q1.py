@@ -39,27 +39,51 @@ data = hdu[0].data
 
 inst = np.arange(0, 2304, 400)
 
+vmax = np.nanpercentile(np.abs(data[inst]), 99)
+vmin = -vmax
+ 
+fig, axes = plt.subplots(2, 3, figsize=(9, 6),
+                         gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
 
-# fig, ax = plt.subplots(2, 3, figsize=(8, 6), gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
 
-# for i in range(len(inst)):
-#     data_i = data[inst[i], :, :]
-#     if i <= 2:
-#         im = ax[0][i].imshow(data_i, cmap='gray')
-        
-#     else:
-#         im = ax[1][i-4].imshow(data_i, cmap='gray')
-        
-# # fig.colorbar(im, ax=ax, pad = 0, label='Doppler Velocity [m/s]', shrink=0.5)
-# plt.show()
+for ax, t in zip(axes.flat, inst):
+    im = ax.imshow(data[t], cmap='gray', vmin=vmin, vmax=vmax)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    # Small label so each panel is identifiable without axis ticks
+    ax.text(0.03, 0.95, f't = {t}', transform=ax.transAxes, color='white',
+            va='top', ha='left', fontsize=12)
+ 
+# Colorbar axis spanning the full height of the image grid
+bottom = axes[1, 0].get_position().y0
+top = axes[0, 0].get_position().y1
+cax = fig.add_axes([0.90, bottom, 0.025, top - bottom])
+fig.colorbar(im, cax=cax, label='Doppler Velocity [m/s]', pad = 0)
+ 
+plt.show()
+plt.cla()
+plt.clf()
+plt.close()
 
 
 ### For each inst, slice along a random row and plot the doppler velocity signal as a function of X
-row_random = np.random.randint(0, 384)
-for i in range(len(inst)):
-    data_i = data[inst[i], :, :]
-    plt.plot(data_i[row_random, :], label=f'Image {inst[i]}')
-    plt.show()
+np.random.seed(111)
+row_random = np.random.randint(0, data.shape[1])
+ 
+fig2, axs2 = plt.subplots(2, 3, figsize=(10, 6), sharex=True, sharey=True,
+                          gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
+ 
+for ax, t in zip(axs2.flat, inst):
+    ax.plot(data[t, row_random, :], color='blue', lw=1)
+    ax.text(0.03, 0.95, f't = {t}', transform=ax.transAxes, va='top', ha='left', fontsize=12)
+ 
+fig2.supxlabel('X [pixels]')
+fig2.supylabel('Doppler Velocity [m/s]')
+
+plt.show()
+ 
+
+
 
 
 
