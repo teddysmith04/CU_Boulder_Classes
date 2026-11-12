@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from scipy.fft import fftn, fftshift
+from scipy.signal.windows import hann
 
 ### Compute the 3D power spectrum of the data cube
 ### Will result in temporal frequency and two wavenumbers
@@ -12,6 +13,12 @@ filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/AMP HWs/Codes/HW5 Cod
 file = fits.open(filepath)
 
 data = file[0].data
+
+### Window the data with a hann window
+window = hann(data.shape[0])[:, None, None] * hann(data.shape[1])[None, :, None] * hann(data.shape[2])[None, None, :]
+
+### Apply the window to the data
+data = data * window
 
 
 ## compute 3D fft
@@ -40,14 +47,16 @@ for t, w in zip(insts, fft_w[insts]):
 kys = np.fft.fftfreq(data.shape[1])
 
 insts_ky = np.arange(0, 225, 50)
-for t, ky in zip(insts, kys[insts_ky]):
-    plt.imshow(log_power_spectrum[:, t, :], cmap='gray')
-    plt.title(f'ky = {ky:.3f}')
-    plt.colorbar(label='log10(Power Spectrum)')
+for t, ky in zip(insts_ky, kys[insts_ky]):
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    im = ax.imshow(log_power_spectrum[:, t, :], cmap='gray')
+    ax.set_title(f'ky = {ky:.3f}')
+    ax.set_xlabel('kx')
+    ax.set_ylabel('w')
+    fig.colorbar(im, ax=ax, label='log10(Power Spectrum)')
     plt.show()
-    plt.cla()
-    plt.clf()
-    plt.close()
+
 
 
 
