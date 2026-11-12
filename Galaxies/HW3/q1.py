@@ -25,9 +25,14 @@ def composite(vector):
     return [mass(50, ps, rs) - mass_r50, mass(230, ps, rs) - mass_r230]
 
 solutions = fsolve(composite, [1e3, 1e3])
-print(f"Best fit parameters: ps = {solutions[0]}, rs = {solutions[1]}")
+print(f"Best fit parameters: ps = {solutions[0]:.3e}, rs = {solutions[1]:.3f}")
 sanity_check = composite(solutions)
 print(f"Sanity check (should be close to 0): {sanity_check}")
 
 mass_r50_check = mass(50, solutions[0], solutions[1])
 print(f"Mass enclosed within 50 kpc: {mass_r50_check:.2e} M_sun (should be close to {mass_r50:.2e} M_sun)")
+
+### Q2
+### mass as r -> infty or in our case, idk maybe 1000rs
+total_mass = mass(100000000 * solutions[1], solutions[0], solutions[1])
+print(f"Total mass enclosed within 1000 rs: {total_mass:.2e} M_sun")
