@@ -40,19 +40,26 @@ data = hdu[0].data
 inst = np.arange(0, 2304, 400)
 
 
-fig, ax = plt.subplots(2, 3, figsize=(8, 6), gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
+# fig, ax = plt.subplots(2, 3, figsize=(8, 6), gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
 
+# for i in range(len(inst)):
+#     data_i = data[inst[i], :, :]
+#     if i <= 2:
+#         im = ax[0][i].imshow(data_i, cmap='gray')
+        
+#     else:
+#         im = ax[1][i-4].imshow(data_i, cmap='gray')
+        
+# # fig.colorbar(im, ax=ax, pad = 0, label='Doppler Velocity [m/s]', shrink=0.5)
+# plt.show()
+
+
+### For each inst, slice along a random row and plot the doppler velocity signal as a function of X
+row_random = np.random.randint(0, 384)
 for i in range(len(inst)):
     data_i = data[inst[i], :, :]
-    if i <= 2:
-        im = ax[0][i].imshow(data_i, cmap='gray')
-        
-    else:
-        im = ax[1][i-4].imshow(data_i, cmap='gray')
-        
-# fig.colorbar(im, ax=ax, pad = 0, label='Doppler Velocity [m/s]', shrink=0.5)
-plt.show()
-
+    plt.plot(data_i[row_random, :], label=f'Image {inst[i]}')
+    plt.show()
 
 
 
