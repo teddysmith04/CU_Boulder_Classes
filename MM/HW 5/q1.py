@@ -38,7 +38,7 @@ data = hdu[0].data
 ## Pull out like 10 images and show them as a function of X and Y
 
 inst = np.arange(0, 2304, 400)
-print(len(inst))
+
 
 fig, ax = plt.subplots(2, 3, figsize=(8, 6), gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
 
