@@ -36,9 +36,8 @@ nt, nx, ny = data.shape
 
 data -= data.mean()  # Subtract the mean to remove DC component
 data *= hann(nt).astype(np.float32)[:, None, None]
-data *= hann(nx).astype(np.float32)[None, :, None]
+data *= hann(nx).astype(np.float32)[None, :, None] ### window in cyl radius maybe
 data *= hann(ny).astype(np.float32)[None, None, :]
-
 
 ## compute 3D fft
 fft_data = fftn(data, workers=-1)
@@ -59,61 +58,37 @@ power_0 = np.zeros(len(w)) ## will add values of power at k_x = k_y = 0 for each
 for i in range(len(w)):
     power_0[i] = power[i, iy0, ix0]
 
-
-## Plot power vs temporal frequency for selected pixel          #|
-# fig, ax = plt.subplots(figsize=(8, 5))                        #| THIS WORKS
-# ax.plot(w, power_0, color='blue', lw=1.5)                     #|
-# ax.set(
-# xlabel='Temporal Frequency [mHz]',                                
-#        ylabel='Power [arb. units]',
-    #    title='Power Spectrum at k_x = k_y = 0'
-
-# )
-# plt.show()
-
-### ___________________________________________________________________________________________
-### Now the hard part. Since power is isotropic, we can look at some wavenumber ka = sqrt(kx^2 + ky^2). Pick a representative range that spans kx, ky for ka, 
-### and then for each ka, bin the power in around some ka - delta ka and ka + delta ka. Integrate the power in that bin and plot the integrated paowr per bin vs frequency. 
-### ___________________________________________________________________________________________
-
-### New idea, screw using ka bin kx and ky simultaneously with the same delta k. Then integrate power for some frequency w within the kx ky bin 
-
-power_in_bins = {} ## heres my idea, each entry in this dict will be like bin 1: then an array of power in bin 1 for every frequency
-
+### Define range for total wavenumber and frequency
 kx_max, kx_min, ky_max, ky_min = kx.max(), kx.min(), ky.max(), ky.min()
+ka_min, ka_max = np.sqrt(kx_min**2 + ky_min**2), np.sqrt(kx_max**2 + ky_max**2)
+w_min, w_max = w.min(), w.max()
 
-## Define bins 
-dk = 0.1
-# print((kx_max - kx_min)//dk) #WILL return 9 bins with dk = 0.1
+### Define total wavenumber bins
+ka_bins = np.linspace(ka_min, ka_max, 50)  # Makes 50 bins - empty bins
+w_bins = np.linspace(w_min, w_max, 50)  # Makes 50 bins
 
-for kx_bin, ky_bin in zip(np.arange(kx_min, kx_max, dk), np.arange(ky_min, ky_max, dk)):
-    kx_bin_min, kx_bin_max = kx_bin, kx_bin + dk
-    ky_bin_min, ky_bin_max = ky_bin, ky_bin + dk
+power_w_ka_bins = np.zeros((len(ka_bins), len(w_bins)))  # shape (number of ka bins, number of frequencies)
 
-    ## find the indices of the power array that correspond to the bin
-    kx_indices = np.where((kx >= kx_bin_min) & (kx < kx_bin_max))[0]
-    ky_indices = np.where((ky >= ky_bin_min) & (ky < ky_bin_max))[0]
+### Vectorized approach to calculate ka and bin indices
+kx_grid, ky_grid = np.meshgrid(kx, ky, indexing='ij')
+ka_grid = np.sqrt(kx_grid**2 + ky_grid**2)
 
-    ## integrate power in the bin for each frequency w
-    power_in_bins[f"bin_{kx_bin:.2f}_{ky_bin:.2f}"] = np.zeros(len(w))
-    for i in range(len(w)):
-        power_in_bins[f"bin_{kx_bin:.2f}_{ky_bin:.2f}"][i] = np.sum(power[i, ky_indices[:, None], kx_indices[None, :]])
+for i, wi in enumerate(w):
+    w_bin_index = np.digitize(wi, w_bins) -1
+    ka_bin_indices = np.digitize(ka_grid.flatten(), ka_bins) - 1
+    valid_indices = (0 <= ka_bin_indices) & (ka_bin_indices < len(ka_bins))
+    
+    # Accumulate power in bins
+    power_w_ka_bins[ka_bin_indices[valid_indices], w_bin_index] += power[i].flatten()[valid_indices]
 
-### Plot for one bin
-# print(f"Power in bins: {power_in_bins.keys()}")
 
-fig, axs = plt.subplots(2, 5, figsize=(15, 6), gridspec_kw={'hspace': 0, 'wspace': 0})
 
-for ax, bin_key in zip(axs.flat, power_in_bins.keys()):
-    ax.plot(w, power_in_bins[bin_key], color='blue', lw=1.5)
-    ax.text(0.03, 0.95, bin_key, transform=ax.transAxes, color='black', va='top', ha='left', fontsize=12)
-    ax.xaxis.set_major_locator(MaxNLocator(nbins=5, prune='both'))
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=5, prune='both'))
-
+### imshow w vs ka with colorbar for power
+data_bins = power_w_ka_bins.T  # Transpose to have w on y-axis and ka on x-axis
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.imshow(data_bins, origin='lower', aspect='auto', extent=[ka_bins[0], ka_bins[-1], w_bins[0], w_bins[-1]], cmap='magma')
 
 plt.show()
-   
-
 
 
 
