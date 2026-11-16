@@ -10,7 +10,7 @@ from matplotlib.ticker import MaxNLocator
 #### Eventiually want to plot k1 vs k2 with a colorbar for temporal frequency
 DT = 45.0  # time cadence of the data cube [s]
 ## Load in data
-filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/AMP HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
+filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
 file = fits.open(filepath)
 
 data = np.array(file[0].data, dtype=np.float32)
@@ -54,7 +54,7 @@ def shared_grid(slices, labels, extent, xlabel, ylabel, ylim=None):
  
     for ax, img, lab in zip(axes.flat, slices, labels):
         im = ax.imshow(img, origin='lower', extent=extent, aspect='auto',
-                       cmap='gray', vmin=vmin, vmax=vmax)
+                       cmap='magma', vmin=vmin, vmax=vmax)
         ax.text(0.04, 0.95, lab, transform=ax.transAxes, color='white',
                 va='top', ha='left', fontsize=12)
         # Trim the outermost tick labels so they don't collide where panels touch
@@ -87,7 +87,11 @@ shared_grid(slices, labels,
             extent=[kx[0], kx[-1], ky[0], ky[-1]],
             xlabel=r'$k_x$ [cycles / pixel]',
             ylabel=r'$k_y$ [cycles / pixel]')
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/power_spectrum_slices.pdf', bbox_inches='tight')
 plt.show()
+plt.cla()
+plt.clf()
+plt.close()
  
 ## __________________________________________________________________________________________
 ## Figure 2: w vs kx slices at different ky (positive frequencies only)
@@ -103,7 +107,12 @@ shared_grid(slices, labels,
             ylabel='w [mHz]',
             # ylim=(0, 8)) 
   )  # zoom on the low-frequency band; remove to see everything
+
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/power_spectrum_w_vs_kx.pdf', bbox_inches='tight')
 plt.show()
+plt.cla()
+plt.clf()
+plt.close()
 
 
 

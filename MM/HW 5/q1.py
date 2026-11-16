@@ -26,7 +26,7 @@ plt.rcParams.update({
 
 
 ### Load in Data file 
-filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/AMP HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
+filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
 
 ## Read in data and read header
 hdu = fits.open(filepath)
@@ -59,6 +59,8 @@ bottom = axes[1, 0].get_position().y0
 top = axes[0, 0].get_position().y1
 cax = fig.add_axes([0.90, bottom, 0.025, top - bottom])
 fig.colorbar(im, cax=cax, label='Doppler Velocity [m/s]', pad = 0)
+
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/doppler_images.pdf', bbox_inches='tight')
  
 plt.show()
 plt.cla()
@@ -79,6 +81,8 @@ for ax, t in zip(axs2.flat, inst):
  
 fig2.supxlabel('X [pixels]')
 fig2.supylabel('Doppler Velocity [m/s]')
+
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/doppler_slice.pdf', bbox_inches='tight')
 
 plt.show()
 plt.cla()
