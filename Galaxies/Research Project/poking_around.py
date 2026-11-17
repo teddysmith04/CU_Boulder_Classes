@@ -30,6 +30,12 @@ phot = Table(mfile[1].data)
 phys = Table(mfile[2].data)
 
 
+### Print all keys in phot
+print("Photometry keys:")
+print(phot.colnames)
+
+exit()
+
 
 ### Clean data
 condition_clean = np.logical_and.reduce((
