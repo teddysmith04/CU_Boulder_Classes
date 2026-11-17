@@ -5,6 +5,7 @@ from astropy.io import fits
 from scipy.fft import fftn, fftshift, fftfreq
 from scipy.signal.windows import hann
 from matplotlib.ticker import MaxNLocator
+from matplotlib.colors import LogNorm
 
 plt.rcParams.update({
     'font.size': 14,
@@ -27,7 +28,7 @@ plt.rcParams.update({
 
 DT = 45.0  # time step [s]
 
-filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/AMP HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
+filepath = '/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/Codes/HW5 Codes/hmi.rdVtrack_fd15.2121.225.225.0.-22.5.-00.0.V.fits'
 file = fits.open(filepath)
 
 data = np.array(file[0].data, dtype=np.float32)
@@ -63,32 +64,71 @@ kx_max, kx_min, ky_max, ky_min = kx.max(), kx.min(), ky.max(), ky.min()
 ka_min, ka_max = np.sqrt(kx_min**2 + ky_min**2), np.sqrt(kx_max**2 + ky_max**2)
 w_min, w_max = w.min(), w.max()
 
-### Define total wavenumber bins
-ka_bins = np.linspace(ka_min, ka_max, 50)  # Makes 50 bins - empty bins
-w_bins = np.linspace(w_min, w_max, 50)  # Makes 50 bins
+n_ka = 50
+ka_edges = np.linspace(0.0, 0.5, n_ka + 1)          # 0 -> Nyquist (full annuli only)
+ka_centers = 0.5 * (ka_edges[1:] + ka_edges[:-1])
 
-power_w_ka_bins = np.zeros((len(ka_bins), len(w_bins)))  # shape (number of ka bins, number of frequencies)
+kx_grid, ky_grid = np.meshgrid(kx, ky, indexing='ij')   # shape (nx, ny), matches power[i]
+ka_flat = np.hypot(kx_grid, ky_grid).ravel()
 
-### Vectorized approach to calculate ka and bin indices
-kx_grid, ky_grid = np.meshgrid(kx, ky, indexing='ij')
-ka_grid = np.sqrt(kx_grid**2 + ky_grid**2)
+# Bin indices depend only on k, so compute once, outside the loop
+ka_idx = np.digitize(ka_flat, ka_edges) - 1
+valid = (ka_idx >= 0) & (ka_idx < n_ka)           # drops the corners beyond Nyquist
+ka_idx = ka_idx[valid]
+counts = np.bincount(ka_idx, minlength=n_ka)      # pixels per annulus
 
-for i, wi in enumerate(w):
-    w_bin_index = np.digitize(wi, w_bins) -1
-    ka_bin_indices = np.digitize(ka_grid.flatten(), ka_bins) - 1
-    valid_indices = (0 <= ka_bin_indices) & (ka_bin_indices < len(ka_bins))
-    
-    # Accumulate power in bins
-    power_w_ka_bins[ka_bin_indices[valid_indices], w_bin_index] += power[i].flatten()[valid_indices]
+power_w_ka = np.zeros((nt, n_ka))                 # (w, ka)
+for i in range(nt):
+    sums = np.bincount(ka_idx, weights=power[i].ravel()[valid], minlength=n_ka)
+    power_w_ka[i] = sums / np.maximum(counts, 1)  # mean power per annulus
 
+### Positive frequencies only (the spectrum of a real signal is symmetric in w)
+pos = w >= 0
+img = power_w_ka[pos]
+w_pos = w[pos]
 
-
-### imshow w vs ka with colorbar for power
-data_bins = power_w_ka_bins.T  # Transpose to have w on y-axis and ka on x-axis
 fig, ax = plt.subplots(figsize=(10, 6))
-ax.imshow(data_bins, origin='lower', aspect='auto', extent=[ka_bins[0], ka_bins[-1], w_bins[0], w_bins[-1]], cmap='magma')
+im = ax.imshow(img, origin='lower', aspect='auto', cmap='magma',
+               extent=[ka_edges[0], ka_edges[-1], w_pos[0], w_pos[-1]],
+               norm=LogNorm(vmin=np.percentile(img[img > 0], 1), vmax=img.max()))
+ax.set_xlabel(r'$k_a$ [cycles / pixel]')
+ax.set_ylabel(r'$\omega$ [mHz]')
+fig.colorbar(im, ax=ax, label='Power', pad = 0.0)
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/ka_power_spectrum.pdf', bbox_inches='tight')
+plt.show()
+plt.cla()
+plt.clf()
+plt.close()
+
+### Pick out a slice of ka = 0.1 and plot the power as a function of w compare to plot from single pixel kx = 0.1, ky = 0
+
+ka_slice = 0.1
+ka_idx = np.argmin(np.abs(ka_centers - ka_slice))
+
+kx_pix = 0.1
+kx_idx = np.argmin(np.abs(kx - kx_pix))
+ky = 0.0
+ky_idx = np.argmin(np.abs(ky - ky))
+
+fig, axs = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={'hspace': 0.0, 'wspace': 0.0})
+axs[0].plot(w_pos, power_w_ka[pos, ka_idx], color='k', lw=1)
+axs[0].set_xlabel(r'$\omega$ [mHz]')
+axs[0].set_ylabel('Power')
+axs[0].set_yscale('log')
+axs[1].plot(w_pos, power[pos, ky_idx, kx_idx], color='k', lw=1)
+axs[1].set_xlabel(r'$\omega$ [mHz]')
+axs[1].set_yscale('log')
+
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/ka_vs_pixel_power_spectrum.pdf', bbox_inches='tight')
 
 plt.show()
+plt.cla()
+plt.clf()
+plt.close()
+
+
+
+
 
 
 
