@@ -18,9 +18,9 @@ data = np.array(file[0].data, dtype=np.float32)
 nt, nx, ny = data.shape
 
 data -= data.mean()  # Subtract the mean to remove DC component
-data *= hann(nt).astype(np.float32)[:, None, None]
-data *= hann(nx).astype(np.float32)[None, :, None]
-data *= hann(ny).astype(np.float32)[None, None, :]
+# data *= hann(nt).astype(np.float32)[:, None, None]
+# data *= hann(nx).astype(np.float32)[None, :, None]
+# data *= hann(ny).astype(np.float32)[None, None, :]
 
 
 ## compute 3D fft
@@ -87,7 +87,7 @@ shared_grid(slices, labels,
             extent=[kx[0], kx[-1], ky[0], ky[-1]],
             xlabel=r'$k_x$ [cycles / pixel]',
             ylabel=r'$k_y$ [cycles / pixel]')
-plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/power_spectrum_slices.pdf', bbox_inches='tight')
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/nw_power_spectrum_slices.pdf', bbox_inches='tight')
 plt.show()
 plt.cla()
 plt.clf()
@@ -108,7 +108,7 @@ shared_grid(slices, labels,
             # ylim=(0, 8)) 
   )  # zoom on the low-frequency band; remove to see everything
 
-plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/power_spectrum_w_vs_kx.pdf', bbox_inches='tight')
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/MathMeth/HWs/HW5/nw_power_spectrum_w_vs_kx.pdf', bbox_inches='tight')
 plt.show()
 plt.cla()
 plt.clf()
