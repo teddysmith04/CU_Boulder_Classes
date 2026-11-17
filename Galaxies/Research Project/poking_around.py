@@ -34,7 +34,7 @@ phys = Table(mfile[2].data)
 print("Photometry keys:")
 print(phot.colnames)
 
-exit()
+
 
 
 ### Clean data

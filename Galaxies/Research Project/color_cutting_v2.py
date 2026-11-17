@@ -26,11 +26,12 @@ mfile = fits.open(mfile_path)
 phot = Table(mfile[1].data)
 phys = Table(mfile[2].data)
 
+
 condition_clean = np.logical_and.reduce((
     phot['warn_flag']==0, # No warning flag
     np.abs(phot['mag_auto_f444w'])<30, # Remove very faint objects
     phot['flag_star_hsc']==0, # Remove objects in HSC star mask area
-    phys['zfinal']>4, # Remove objects with zfinal < 4
+    phys['zfinal']>7, # Remove objects with zfinal < 4
     np.abs(phot['mag_auto_f277w'])<30, # Remove very faint objects
     phot['flux_auto_f277w']>0, # Remove objects with negative flux
     phot['flux_auto_f444w']>0, # Remove objects with negative flux
@@ -39,6 +40,8 @@ condition_clean = np.logical_and.reduce((
     np.abs(phys['zfinal'] - phys['zpdf_l68']) < 1.0, ## Remove objects with zfinal and zpdf_l68 differing by more than 1
     phot['snr_f277w'] > 5, ## Remove objects with SNR < 5 in F277W
     phot['snr_f444w'] > 5, ## Remove objects with SNR < 5 in F444W
+    ### Select masses > log (M) > 9.5
+    phys['mass_minchi2'] > 9.5,
 ))
 
 F444W_flux = phot['flux_auto_f444w'][condition_clean] * 1e-29 ## in erg / s cm Hz
@@ -46,6 +49,15 @@ F277W_flux = phot['flux_auto_f277w'][condition_clean] * 1e-29 ## in erg / s cm H
 
 zs = phys['zfinal'][condition_clean]
 ids = phot['id'][condition_clean]
+agn_chi2 = phys['chi2_agn'][condition_clean]   
+
+AGN_threshold = 100.0
+
+AGN_condition = np.logical_and.reduce((
+    phys['chi2_agn'][condition_clean] > AGN_threshold
+))
+
+
 
 
 
@@ -59,24 +71,29 @@ luminosity_F444W = F444W_flux * 4 * np.pi * distances**2
 ### Turn to M
 Msun = 4.74
 Lsun = 3.828e33  # erg/s
-F277W_Mag = -2.5 * np.log10(luminosity_F277W /Lsun) + Msun
-F444W_Mag = -2.5 * np.log10(luminosity_F444W /Lsun) + Msun
+F277W_Mag = phot['mag_auto_f277w'][condition_clean]
+F444W_Mag = phot['mag_auto_f444w'][condition_clean]
+
+F227W_agnmag = phot['mag_auto_f277w'][AGN_condition]
+F444W_agnmag = phot['mag_auto_f444w'][AGN_condition]
 
 color = (F277W_Mag - F444W_Mag)
+agn_color = (F227W_agnmag - F444W_agnmag)
 
 #### Plot color vs F444W Mag with each point colored on a colorbar representing z
 fig, ax = plt.subplots(figsize=(10, 10))
-scatter = ax.scatter(F444W_Mag, color, c=zs, cmap='viridis', s=40, alpha=0.7, edgecolors='k', rasterized=True)
+scatter = ax.scatter(F444W_Mag, color, c=zs, cmap='viridis', s=40, alpha=0.7, edgecolors='k')
+scatter_agn = ax.scatter(F444W_agnmag, agn_color, c='r', marker = '*', s=40, alpha=1, edgecolors='k', label='AGN Candidates')
 ax.axhline(y=1.5, color='r', linestyle='--', label='Color Cut = 1.5')
 ax.set(
     xlabel='F444W Mag',
     ylabel='F277W Mag - F444W Mag',
-    ylim = (0, 8)
+    # ylim = (0, 8)
 )
 cbar = plt.colorbar(scatter, ax=ax, pad = 0)
 cbar.set_label('Redshift (z)')
 plt.legend()
-plt.savefig('../figures/color_cut.pdf', bbox_inches='tight', dpi=300)
+# plt.savefig('../figures/color_cut.pdf', bbox_inches='tight', dpi=300)
 plt.show()
 
 ### Get Ids above color cut
@@ -84,6 +101,6 @@ Indexs_above_color_cut = np.where(color > 1.5)[0]
 ids_above_color_cut = ids[Indexs_above_color_cut]
 
 ### Save ids as txt file
-# np.savetxt('ids_above_color_cut.txt', ids_above_color_cut, fmt='%d')
+np.savetxt('ids_above_color_cut.txt', ids_above_color_cut, fmt='%d')
 
 
