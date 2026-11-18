@@ -28,12 +28,24 @@ mfile = fits.open(mfile_path)
 #### Figure out whats in each file
 phot = Table(mfile[1].data)
 phys = Table(mfile[2].data)
+unk1 = Table(mfile[3].data)
+unk2 = Table(mfile[4].data)
+unk3 = Table(mfile[5].data)
+unk4 = Table(mfile[6].data)
+unk5 = Table(mfile[7].data)
+
+
 
 
 ### Print all keys in phot
 print("Photometry keys:")
-print(phot.colnames)
+print(unk3.colnames)
+print(unk4.colnames)
+print(unk5.colnames)
 
+
+
+exit()
 
 
 

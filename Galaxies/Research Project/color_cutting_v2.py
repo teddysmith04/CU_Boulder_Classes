@@ -93,14 +93,22 @@ ax.set(
 cbar = plt.colorbar(scatter, ax=ax, pad = 0)
 cbar.set_label('Redshift (z)')
 plt.legend()
-# plt.savefig('../figures/color_cut.pdf', bbox_inches='tight', dpi=300)
+plt.savefig('/Users/teddysmith/CU Boulder/1st Year/Galaxies/Proposal/figures', bbox_inches='tight', dpi=300)
 plt.show()
 
 ### Get Ids above color cut
 Indexs_above_color_cut = np.where(color > 1.5)[0]
 ids_above_color_cut = ids[Indexs_above_color_cut]
 
+del mfile
+del phot
+del phys
+
+print('AGN Chi2 for ids above color cut:')
+print(agn_chi2[Indexs_above_color_cut])
+
+
 ### Save ids as txt file
-np.savetxt('ids_above_color_cut.txt', ids_above_color_cut, fmt='%d')
+# np.savetxt('ids_above_color_cut.txt', ids_above_color_cut, fmt='%d')
 
 
