@@ -145,6 +145,8 @@ parent = condition_clean & (phys['mass_med'] > M_LIM - 0.5) & (phys['zfinal'] > 
 # you can add e.g. a cut on phot['c_f444w'] here.)
 color = phot['mag_auto_f277w'] - phot['mag_auto_f444w']
 is_ero = np.asarray(color > COLOR_CUT)[parent]
+agn_chi2 = phys['chi2_agn']
+is_possible_agn = np.asarray(agn_chi2 < 20.0)[parent]
 
 print(f"Parent sample: {parent.sum()} sources ({is_ero.sum()} EROs)")
 
@@ -170,6 +172,13 @@ z_cen = 0.5 * (Z_EDGES[:-1] + Z_EDGES[1:])
 all_med, all_lo, all_hi, all_N = binned_density(z_draw, m_draw, Z_EDGES, volumes, rng)
 nor_med, nor_lo, nor_hi, nor_N = binned_density(z_draw[:, ~is_ero], m_draw[:, ~is_ero],
                                                 Z_EDGES, volumes, rng)
+agn_med, agn_lo, agn_hi, agn_N = binned_density(z_draw[:, is_possible_agn], m_draw[:, is_possible_agn],
+                                                Z_EDGES, volumes, rng)
+neither_med, neither_lo, neither_hi, neither_N = binned_density(z_draw[:, ~is_ero & ~is_possible_agn],
+                                                            m_draw[:, ~is_ero & ~is_possible_agn],
+                                                            Z_EDGES, volumes, rng)
+
+
 
 # ----------------------------------------------------------------------------
 # 4. Theory curves + plot
@@ -183,13 +192,15 @@ colors = plt.cm.YlOrRd(np.linspace(0.35, 0.95, len(EPS_LIST)))
 for c, eps in zip(colors, EPS_LIST):
     ax.plot(z_grid, theory[eps], color=c, lw=2, label=rf'$\epsilon = {eps}$')
 
-def _plot_obs(med, lo, hi, ls, alpha, label):
+def _plot_obs(med, lo, hi, ls, alpha, label, color):
     ok = med > 0                                   # can't show n = 0 on a log axis
     ax.plot(z_cen[ok], med[ok], 'k', ls=ls, marker='o', ms=4, label=label)
-    ax.fill_between(z_cen[ok], lo[ok], hi[ok], color='k', alpha=alpha, lw=0)
+    ax.fill_between(z_cen[ok], lo[ok], hi[ok], color= color, alpha=alpha, lw=0)
 
-_plot_obs(nor_med, nor_lo, nor_hi, '-', 0.25, 'COSMOS-Web (EROs removed)')
-_plot_obs(all_med, all_lo, all_hi, ':', 0.10, 'COSMOS-Web (incl. EROs)')
+_plot_obs(nor_med, nor_lo, nor_hi, '-', 0.25, 'COSMOS-Web (EROs removed)', 'k')
+_plot_obs(all_med, all_lo, all_hi, ':', 0.10, 'COSMOS-Web (incl. EROs)', 'k')
+# _plot_obs(agn_med, agn_lo, agn_hi, '--', 0.25, 'COSMOS-Web (possible AGN)')
+_plot_obs(neither_med, neither_lo, neither_hi, '--', 0.25, 'COSMOS-Web (no EROs or AGN)', 'b')
 
 ax.set(xlabel='Redshift (z)', ylabel=r'$n(>M_\star)$ [Mpc$^{-3}$, comoving]', yscale='log',
        xlim=(Z_EDGES[0] - 0.5, Z_EDGES[-1]))
@@ -197,7 +208,7 @@ ax.text(0.96, 0.95, rf'$\log\,M_\star/M_\odot > {M_LIM:g}$', transform=ax.transA
         ha='right', va='top')
 ax.legend(fontsize=9, loc='lower left', ncol=2)
 fig.tight_layout()
-fig.savefig('fig5_recreation.png', dpi=200)
+fig.savefig('/Users/teddysmith/CU Boulder/1st Year/Galaxies/Project/Figs/baryon_conv.pdf', bbox_inches='tight', dpi=300)
 
 # ----------------------------------------------------------------------------
 # 5. Efficiency needed to match each bin (cf. Fig. 10a of the paper)
