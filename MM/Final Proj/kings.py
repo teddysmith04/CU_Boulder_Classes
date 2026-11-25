@@ -4,7 +4,7 @@ from scipy.sparse.linalg import splu
 import matplotlib.pyplot as plt
 
 # --- parameters ---
-D, k, xc = 0.015, 0.24, 0.35
+D0, k, xc = 0.0015, 0.24, 0.35
 x0, sigma0 = 0.74, 0.06
 T  = 25.0      # years
 N  = 2000       # number of cells
@@ -19,7 +19,7 @@ x_face = np.arange(N + 1) * dx       # faces: where flux J lives
 u = np.exp(-(x - x0)**2 / (2 * sigma0**2))
 u /= np.sum(u) * dx
 
-def build_L(N, dx, x_face, D, k, xc):
+def build_L(N, dx, x_face, D0, k, xc):
     """
     Return sparse (N x N) matrix L so that du/dt = L @ u.
 
@@ -32,6 +32,11 @@ def build_L(N, dx, x_face, D, k, xc):
     ## Know J = D*u_x + k(x - xc)*u
     xfi = x_face[1:-1]
 
+    
+    ### Play around with D, if you want to make it depend on x, you can do that here.  For example:
+    ## Make D larger for smaller x (i.e., for worse teams, the diffusion is larger)
+    D = D0 * (1 + 0.5 * (1 - xfi))  # for example, make D larger for smaller x
+
     a = D / dx - k * (xfi - xc) / 2  # for right J
     b = -D / dx - k * (xfi - xc) / 2  # for left J
 
@@ -40,16 +45,17 @@ def build_L(N, dx, x_face, D, k, xc):
     lower = a / dx
 
     L = sp.diags([lower, main, upper], [-1, 0, 1], format="csc")
+    
 
     return L, [upper, main, lower]
 
-L, _ = build_L(N, dx, x_face, D, k, xc)
+L, _ = build_L(N, dx, x_face, D0, k, xc)
 
 
 
 # --- sanity check before going any further ---
 # TODO: what should the column sums of L be if probability is conserved?
-print(np.abs(L.sum(axis=0)).max())
+print('SANITY', np.abs(L.sum(axis=0)).max())
 
 
 # --- Crank-Nicolson matrices ---
@@ -84,8 +90,13 @@ for n in range(nsteps):
     win_variance = np.sum((x - winpct)**2 * u) * dx
     variance_winpct_x[n] = win_variance
     
-    print(f"t={n*dt:.2f} years: win pct = {winpct:.4f}")
-    
+    # print(f"t={n*dt:.2f} years: win pct = {winpct:.4f}")
+
+### Actual stats of kings from historical data
+actual_T = np.arange(2002, 2026)
+real_wpct = np.array([
+    0.720, 0.671, 0.610, 0.537, 0.402, 0.463, 0.207, 0.305, 0.293, 0.333, 0.341, 0.341, 0.354, 0.402, 0.39, 0.329, 0.476, 0.431, 0.431, 0.366, 0.585, 0.561, 0.488, 0.268
+])
 
 ### Plot playoff probability over time
 fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, gridspec_kw={'wspace': 0.0})
@@ -100,6 +111,7 @@ ax[0].set(
     xlim=(2002, T + 2002),
     ylim=(0, 1)
 )
+ax[0].plot(actual_T, real_wpct, color='r', lw=2, label = r'Actual Win Percentage', marker = 'o', ls = '')
 ax[1].plot(np.arange(nsteps) * dt + 2002, variance_winpct_x, color='r', lw=2, label = r'Mean Win Percentage', ls = '-')
 ax[1].set(
     xlabel='Time (years)',
